@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}{{ customer.user.username }}'s Profile{% endblock %}
+
+{% block content %}
+<div class="container">
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Customer Profile</h2>
+        
+        <!-- This button only shows if you are the owner of the profile -->
+        {% if current_user.is_authenticated and current_user.id == customer.user_id %}
+        <a href="{{ url_for('shared.edit_profile') }}" class="btn btn-primary">
+            <i class="fas fa-edit me-2"></i>Edit Profile
+        </a>
+        {% endif %}
+    </div>
+    <div class="row">
+        <!-- Left Side: Customer Details -->
+        <div class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-body text-center">
+                    <i class="fas fa-user fa-6x text-primary mb-3"></i>
+                    <h4 class="card-title">{{ customer.user.username }}</h4>
+                    <p class="text-muted">Customer since {{ customer.created_at.strftime('%B %Y') }}</p>
+                    <hr>
+                    <p class="card-text text-start">
+                        <strong><i class="fas fa-envelope me-2"></i>Email:</strong> {{ customer.user.email }}
+                    </p>
+                    <p class="card-text text-start">
+                        <strong><i class="fas fa-map-marker-alt me-2"></i>Address:</strong> {{ customer.user.address or 'N/A' }}
+                    </p>
+                    <p class="card-text text-start">
+                        <strong><i class="fas fa-thumbtack me-2"></i>PIN:</strong> {{ customer.user.pin or 'N/A' }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side: Service Request History -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="fas fa-history me-2"></i>Service History</h4>
+                </div>
+                <div class="card-body">
+                    {% if service_requests %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Service</th>
+                                        <th>Professional</th>
+                                        <th>Status</th>
+                                        <th>Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                {% for req in service_requests %}
+                                <tr>
+                                    <td>#{{ req.id }}</td>
+                                    <td>{{ req.service.service_type }}</td>
+                                    <td>{{ req.professional.user.username if req.professional else 'N/A' }}</td>
+                                    <td>
+                                        <span class="badge {% if req.service_status.name == 'REQUESTED' %} bg-warning text-dark{% elif req.service_status.name == 'ACCEPTED' %} bg-info{% elif req.service_status.name == 'CLOSED' %} bg-secondary{% elif req.service_status.name == 'PAID' %} bg-success{% else %} bg-danger{% endif %}">
+                                            {{ req.service_status.name.title() }}
+                                        </span>
+                                    </td>
+                                    <td>{{ req.created_at.strftime('%Y-%m-%d') }}</td>
+                                </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-center text-muted">This customer has no service history yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

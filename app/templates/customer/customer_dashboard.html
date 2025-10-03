@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}Customer Dashboard{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Welcome Header -->
+    
+           <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2>{{ current_user.username}} Dashboard</h2>
+        </div>
+           </div>
+
+    
+
+    <!-- Search for Professionals -->
+<div class="card mb-4">
+    <div class="card-header"><h4 class="mb-0">Find a Service Professional</h4></div>
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('customer.customer_dashboard') }}">
+            <div class="row g-2">
+                <div class="col-md-5">
+                    <select class="form-select" name="service_id" id="service_id">
+                        <option value="">-- All Service Types --</option>
+                        {% for service in all_services %}
+                        <option value="{{ service.id }}" {% if service.id == search_params.service_id %}selected{% endif %}>
+                            {{ service.service_type }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-5">
+                    <input type="text" class="form-control" name="q" placeholder="Search by name, location, PIN..." value="{{ search_params.q or '' }}">
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-primary w-100" type="submit">Search</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Professionals Listing -->
+    {% if professionals is not none %}
+    <div class="card">
+        <div class="card-header">
+            <h4 class="mb-0">
+                {% if selected_service_name %}
+                    Available Professionals for '{{ selected_service_name }}'
+                {% else %}
+                    Search Results
+                {% endif %}
+            </h4>
+        </div>
+        <div class="card-body">
+            {% if professionals %}
+            <div class="list-group">
+                <!-- LOOP 1: Build the visible list of professionals with buttons -->
+                {% for prof in professionals %}
+                <div class="list-group-item list-group-item-action">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h5 class="mb-1">
+                            <a href="{{ url_for('shared.professional_profile', professional_id=prof.id) }}" class="text-decoration-none">
+                               {{ prof.user.username }}</a>
+                        </h5>
+                        <small class="text-muted">Avg. Rating: {{ avg_ratings.get(prof.id, 'N/A') }} ★</small>
+                    </div>
+                    <p class="mb-1">{{ prof.description or 'No description available.' }}</p>
+                    <small>Experience: {{ prof.experience or 'N/A' }} years</small>
+                    <div class="mt-2">
+                        <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#bookServiceModal{{ prof.id }}">
+                            Book Service
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+                <p class="text-center text-muted">No professionals found matching your search criteria.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- LOOP 2: Define all the booking modals OUTSIDE the list group -->
+    {% for prof in professionals %}
+    <div class="modal fade" id="bookServiceModal{{ prof.id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+<form method="POST" action="{{ url_for('customer.book_service', professional_id=prof.id) }}">
+    {{ form.hidden_tag() }} <!-- Add CSRF token -->
+    <div class="modal-body">
+        <p>You are booking <strong>{{ prof.service.service_type }}</strong> service.</p>
+        <div class="mb-3">
+            {{ form.proposed_price.label(class="form-label") }}
+            {{ form.proposed_price(class="form-control", value=prof.service.base_price) }}
+        </div>
+        <!-- The form object handles the service_id field now -->
+        {{ form.service_id(value=prof.service_id, type="hidden") }}
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        {{ form.submit(class="btn btn-primary") }}
+    </div>
+</form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    {% endif %}
+</div>
+{% endblock %}

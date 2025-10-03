@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Admin Search{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Search Users</h2>
+    </div>
+
+    <!-- Search Form -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('admin.admin_search') }}">
+                <div class="input-group">
+                    <select name="category" class="form-select" style="max-width: 200px;">
+                        <option value="professional" {% if search_params.category == 'professional' %}selected{% endif %}>Professional</option>
+                        <option value="customer" {% if search_params.category == 'customer' %}selected{% endif %}>Customer</option>
+                    </select>
+                    <input type="text" name="q" class="form-control" placeholder="Search by name, email, address, or PIN..." value="{{ search_params.q or '' }}" required>
+                    <button type="submit" class="btn btn-primary">Search</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Search Results -->
+    {% if results is not none %}
+    <div class="card">
+        <div class="card-header">
+            <h4 class="mb-0">Search Results ({{ results|length }} found)</h4>
+        </div>
+        <div class="card-body">
+            {% if results %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in results %}
+                        <tr>
+                            {% if item.user.role == 'professional' %}
+                            <td>
+                            <a href="{{ url_for('shared.professional_profile', professional_id=item.id) }}" class="text-decoration-none">
+                               {{ item.user.username }}</a>
+                            </td>                          
+                            {% else %}
+                            <td>
+                                <a href="{{ url_for('customer.customer_profile', customer_id=item.id) }}" class="text-decoration-none">
+                                    {{ item.user.username }}
+                                </a>
+                            </td>                            {% endif %}
+                            <td>{{ item.user.email }}</td>
+                            <td>{{ item.user.role.title() }}</td>
+                            <td>
+                                {% if item.admin_blocked %}
+                                    <span class="badge bg-danger">Blocked</span>
+                                {% else %}
+                                    <span class="badge bg-success">Active</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if item.admin_blocked %}
+                                <form action="{{ url_for('admin.unblock_user', user_id=item.user.id) }}" method="POST" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-info">Unblock</button>
+                                </form>
+                                {% else %}
+                                <form action="{{ url_for('admin.block_user', user_id=item.user.id) }}" method="POST" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-warning">Block</button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-center text-muted">No results found for your query.</p>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+</div>
+{% endblock %}

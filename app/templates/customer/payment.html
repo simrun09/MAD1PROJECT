@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Complete Payment{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="mb-0">Complete Your Payment</h3>
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">Payment for Service Request #{{ service_request.id }}</h5>
+                <p><strong>Service:</strong> {{ service_request.service.service_type }}</p>
+                <p><strong>Professional:</strong> {{ service_request.professional.user.username }}</p>
+                <p class="fs-4"><strong>Amount:</strong> ${{ "%.2f"|format(service_request.proposed_price) }}</p>
+                <hr>
+
+                <form method="POST" action="{{ url_for('customer.process_payment', request_id=service_request.id) }}">
+                    <h5 class="text-muted">Enter Dummy Card Details</h5>
+                    <div class="mb-3">
+                        <label for="card_number" class="form-label">Card Number</label>
+                        <input type="text" class="form-control" id="card_number" value="4242 4242 4242 4242" disabled>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="expiry" class="form-label">Expiry Date</label>
+                            <input type="text" class="form-control" id="expiry" value="12/29" disabled>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="cvv" class="form-label">CVV</label>
+                            <input type="text" class="form-control" id="cvv" value="123" disabled>
+                        </div>
+                    </div>
+                    <p class="text-muted small">This is a dummy payment form. No real transaction will be made.</p>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success btn-lg">Pay Now</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

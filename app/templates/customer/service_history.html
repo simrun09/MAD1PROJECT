@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}Service History{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2>{{ current_user.username}}'s Service History</h2>
+        </div>
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>ID</th>
+                            <th>Service</th>
+                            <th>Professional</th>
+                            <th>Date Requested</th>
+                            <th class="text-end">Base Price</th>
+                            <th class="text-end">Proposed Price</th>
+                            <th>Status</th>
+                            <th>Date Completed</th>
+                            <th class="text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- LOOP 1: Build the table rows ONLY -->
+                        {% for req in service_requests %}
+                        <tr>
+                            <td>#{{ req.id }}</td>
+                            <td>{{ req.service.service_type }}</td>
+                            <td>{{ req.professional.user.username if req.professional else 'Pending Assignment' }}</td>
+                            <td>{{ req.date_of_request.strftime('%Y-%m-%d') }}</td>
+                            <td class="text-end">${{ '%.2f'|format(req.service.base_price) }}</td>
+                            <td class="text-end">${{ '%.2f'|format(req.proposed_price) }}</td>
+                            <td>
+                                <span class="badge 
+                                    {% if req.service_status.name == 'REQUESTED' %} bg-warning text-dark
+                                    {% elif req.service_status.name == 'ACCEPTED' %} bg-info
+                                    {% elif req.service_status.name == 'CLOSED' %} bg-secondary
+                                    {% elif req.service_status.name == 'REJECTED' %} bg-danger
+                                    {% elif req.service_status.name == 'PAID' %} bg-success
+                                    {% endif %}">
+                                    {{ req.service_status.name.title() }}
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                {% if req.service_status.name == 'REQUESTED' %}
+                                    <button class="btn btn-sm btn-secondary" data-bs-toggle="modal" data-bs-target="#editRequestModal{{ req.id }}">Edit</button>
+                                {% elif req.service_status.name == 'ACCEPTED' %}
+                                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#reviewModal{{ req.id }}">Close & Review</button>
+                                {% elif req.service_status.name == 'CLOSED' %}
+                                    <a href="{{ url_for('customer.show_payment_form', request_id=req.id) }}" class="btn btn-sm btn-success">Pay Now</a>
+                                {% elif req.service_status.name == 'PAID' %}
+                                    <span class="text-muted fst-italic">Completed</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ req.date_of_completion.strftime('%Y-%m-%d') if req.date_of_completion else 'N/A' }}</td>
+
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted">You have no service requests yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== THE FIX ==================== -->
+    <!-- LOOP 2: Define all modals OUTSIDE the table structure -->
+    {% for req in service_requests %}
+        <!-- Edit Request Modal (for 'REQUESTED' state) -->
+        {% if req.service_status.name == 'REQUESTED' %}
+        <div class="modal fade" id="editRequestModal{{ req.id }}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <!-- Inside the form tag for the Edit Request Modal -->
+<form method="POST" action="{{ url_for('customer.update_service_request', request_id=req.id) }}">
+    {{ form.hidden_tag() }} <!-- Add CSRF token -->
+    <div class="modal-body">
+        <p>You are editing your request for <strong>{{ req.service.service_type }}</strong>.</p>
+        <div class="mb-3">
+            {{ form.proposed_price.label(class="form-label") }}
+            {{ form.proposed_price(class="form-control", value=req.proposed_price) }}
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        {{ form.submit(class="btn btn-primary") }}
+    </div>
+</form>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Review Modal (for 'ACCEPTED' state) -->
+        {% if req.service_status.name == 'ACCEPTED' %}
+        <div class="modal fade" id="reviewModal{{ req.id }}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form method="POST" action="{{ url_for('customer.review_service', request_id=req.id) }}">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Review Service Request #{{ req.id }}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="rating_{{ req.id }}" class="form-label">Rating (1-5)</label>
+                                <select name="rating" id="rating_{{ req.id }}" class="form-select" required>
+                                    <option value="5">5 - Excellent</option><option value="4">4 - Good</option><option value="3">3 - Average</option><option value="2">2 - Poor</option><option value="1">1 - Terrible</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="remarks_{{ req.id }}" class="form-label">Remarks</label>
+                                <textarea name="remarks" id="remarks_{{ req.id }}" rows="3" class="form-control"></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Submit Review</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    {% endfor %}
+    <!-- =============================================== -->
+</div>
+{% endblock %}

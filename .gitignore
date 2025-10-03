@@ -1,0 +1,13 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Database
+instance/
+*.sqlite
+*.db
+
+# IDE / Editor folders
+.vscode/
+.idea/
